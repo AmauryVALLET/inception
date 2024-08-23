@@ -1,0 +1,71 @@
+version: '3'
+
+services:
+  mariadb:
+    container_name: mariadb
+    image: mariadb
+    networks:
+      - inception
+    build:
+      context: ./requirements/mariadb
+    env_file:
+      - .env
+    volumes:
+      - mariadb:/var/lib/mysql
+    expose:
+      - "3306"
+    restart: on-failure
+
+  nginx:
+    container_name: nginx
+    image: nginx
+    networks:
+      - inception
+    depends_on:
+      - wordpress
+    build:
+      context: ./requirements/nginx
+    env_file:
+      - .env
+    volumes:
+      - wordpress:/var/www/html
+    ports:
+      - "443:443"
+    restart: on-failure
+
+  wordpress:
+    container_name: wordpress
+    image: wordpress
+    networks:
+      - inception
+    build:
+      context: ./requirements/wordpress
+    env_file:
+      - .env
+    volumes:
+      - wordpress:/var/www/html
+    depends_on:
+      - mariadb
+    restart: on-failure
+    expose:
+      - "9000"
+
+volumes:
+  wordpress:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: '/home/amaury/data/wordpress'
+  mariadb:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: '/home/amaury/data/mariadb'
+
+networks:
+  inception:
+    name: inception
+    driver: bridge
+    # overlay pour des config plus complexes (vs bridge)
